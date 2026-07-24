@@ -49,6 +49,11 @@ def _load_staff_level_omr():
     return run
 
 
+def _load_object_detection():
+    from experiments.object_detection.entrypoint import run
+    return run
+
+
 def _load_difficulty():
     from experiments.difficulty.entrypoint import embeddings, prepare_images, run
     return {"prepare-images": prepare_images, "embeddings": embeddings, "run": run}
@@ -71,6 +76,11 @@ EXPERIMENTS: tuple[Experiment, ...] = (
         "staff-level-omr", "experiments/staff_level_omr", _load_staff_level_omr,
         (("staff-level-omr --ds_name <name> --model_name <musvit|musvit_light>",
           "Train staff-level OMR (MuSViT backbone + BiLSTM/CTC; linear-probe or LoRA)."),),
+    ),
+    Experiment(
+        "object-detection", "experiments/object_detection", _load_object_detection,
+        (("object-detection --train_images <dir> --train_ann <coco.json>",
+          "Fine-tune MuSViT + Faster R-CNN for object detection (full / frozen / LoRA)."),),
     ),
     Experiment(
         "difficulty", "experiments/difficulty", _load_difficulty,

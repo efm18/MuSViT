@@ -32,6 +32,7 @@ This project includes:
 - A central CLI (`musvit`) to discover and run all experiments from the repository root.
 - A full-page Optical Music Recognition (OMR) fine-tuning pipeline.
 - A staff-level OMR fine-tuning pipeline (linear probing or LoRA).
+- An object-detection fine-tuning pipeline (Faster R-CNN with a MuSViT backbone).
 - An embeddings analysis pipeline correlating MuSViT embedding distances with transcription distances (single encoder or cross-platform sweep).
 - A score-difficulty estimation pipeline built on frozen MuSViT page embeddings.
 
@@ -43,6 +44,7 @@ This project includes:
 | [`musvit/`](musvit/) | Central launcher (`musvit` CLI): discovers and runs the experiments. |
 | [`experiments/full_page_omr/`](experiments/full_page_omr/) | Fine-tune MuSViT for full-page Optical Music Recognition (OMR). |
 | [`experiments/staff_level_omr/`](experiments/staff_level_omr/) | Fine-tune MuSViT for staff-level OMR (BiLSTM/CTC head; linear probing or LoRA). |
+| [`experiments/object_detection/`](experiments/object_detection/) | Fine-tune MuSViT + Faster R-CNN for object detection (COCO-format data). |
 | [`experiments/embeddings_test/`](experiments/embeddings_test/) | Correlate MuSViT embedding distances with transcription distances. |
 | [`experiments/difficulty/`](experiments/difficulty/) | Estimate score difficulty from frozen MuSViT page embeddings. |
 
@@ -93,6 +95,7 @@ Each subcommand maps its options directly onto the experiment's Python entrypoin
 ```bash
 uv run musvit full-page-omr --help
 uv run musvit staff-level-omr --help
+uv run musvit object-detection --help
 uv run musvit embeddings run --help
 uv run musvit embeddings sweep --help
 uv run musvit difficulty run --help
@@ -120,6 +123,20 @@ uv run musvit staff-level-omr \
 ```
 
 Fine-tunes a MuSViT backbone with a BiLSTM/CTC head on cropped staves, by either linear probing (`--method linear_prob`, frozen backbone) or LoRA (`--method lora`). Checkpoints (`<model>_<ds>_<method>_<cols>_ctc.pt`) are written inside `experiments/staff_level_omr/`. Requires a GPU and editing the dataset paths in [`config.py`](experiments/staff_level_omr/config.py) to point at your local data.
+
+### Object Detection (Faster R-CNN fine-tuning)
+
+```bash
+uv run musvit object-detection \
+  --model musvit_base \
+  --train_images /path/to/images \
+  --train_ann /path/to/train.json \
+  --val_images /path/to/images \
+  --val_ann /path/to/val.json \
+  --finetuning lora
+```
+
+Fine-tunes a Faster R-CNN with a MuSViT + FPN backbone. Annotations are read in **COCO format** (`images` / `annotations` / `categories`); convert DeepScores (or any detection set) to COCO and point `--train_ann` / `--val_ann` at the JSON files — the number of classes is inferred from `categories`. `--finetuning` selects `full`, `frozen` (freeze the ViT) or `lora` (LoRA adapters on q/k/v). Checkpoints (`ckpt-best.pt`, `ckpt-latest.pt`) are written inside `--out_dir` (under `experiments/object_detection/`); `--use_wandb` enables W&B logging and `--from_checkpoint` resumes. Requires a GPU.
 
 ### Embeddings analysis (single encoder)
 
